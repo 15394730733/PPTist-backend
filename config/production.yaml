@@ -1,0 +1,42 @@
+# Production Environment Configuration
+
+# Extends defaults.yaml with production-specific overrides
+
+server:
+  port: ${PORT}  # Read from environment variable
+  host: '0.0.0.0'
+
+logging:
+  level: 'info'
+  format: 'json'  # Structured JSON logs for log aggregation
+
+# Security hardening
+security:
+  helmet:
+    enabled: true
+  rateLimit:
+    enabled: true
+    max: 100
+    windowMs: 60000
+
+# Use Redis in production (if available)
+queue:
+  type: ${QUEUE_TYPE:-'memory'}
+  redis:
+    host: ${REDIS_HOST:-'localhost'}
+    port: ${REDIS_PORT:-6379}
+    password: ${REDIS_PASSWORD:-null}
+
+# S3 storage in production (if configured)
+storage:
+  type: ${STORAGE_TYPE:-'local'}
+  s3:
+    bucket: ${S3_BUCKET}
+    region: ${S3_REGION}
+    accessKeyId: ${S3_ACCESS_KEY_ID}
+    secretAccessKey: ${S3_SECRET_ACCESS_KEY}
+
+# Tracing in production
+tracing:
+  enabled: ${TRACING_ENABLED:-'false'}
+  endpoint: ${TRACING_ENDPOINT:-'http://localhost:4318'}

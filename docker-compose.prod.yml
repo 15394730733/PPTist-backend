@@ -1,0 +1,74 @@
+# Docker Compose Production Environment
+# Usage: docker-compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  app:
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - QUEUE_TYPE=${QUEUE_TYPE:-redis}
+      - QUEUE_CONCURRENCY=${QUEUE_CONCURRENCY:-5}
+      - METRICS_ENABLED=true
+    ports:
+      - "${PORT:-3000}:3000"
+      - "9090:9090"
+    volumes:
+      # No source mounts in production
+      - storage-data:/app/storage
+      - temp-data:/app/temp
+      - logs-data:/app/logs
+    deploy:
+      resources:
+        limits:
+          cpus: ${DOCKER_CPUS:-2}
+          memory: ${DOCKER_MEMORY:-2G}
+        reservations:
+          cpus: ${DOCKER_CPUS_RESERVE:-0.5}
+          memory: ${DOCKER_MEMORY_RESERVE:-512M}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  redis:
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-}
+      --tcp-backlog 511
+    volumes:
+      - redis-data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: ${REDIS_CPUS:-1}
+          memory: ${REDIS_MEMORY:-512M}
+        reservations:
+          cpus: ${REDIS_CPUS_RESERVE:-0.25}
+          memory: ${REDIS_MEMORY_RESERVE:-128M}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+volumes:
+  logs-data:
+    name: pptist-logs-prod

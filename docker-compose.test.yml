@@ -1,0 +1,42 @@
+# Docker Compose Test Environment
+# Usage: docker-compose -f docker-compose.base.yml -f docker-compose.test.yml up
+# Or: docker-compose -f docker-compose.test.yml run --rm test-runner
+
+version: '3.8'
+
+services:
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test
+    container_name: pptist-test-runner
+    volumes:
+      # Mount source code for testing
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./config:/app/config:ro
+      # Prevent node_modules from being overridden
+      - /app/node_modules
+      # Test results
+      - test-results:/app/test-results
+      - coverage-data:/app/coverage
+    environment:
+      - NODE_ENV=test
+      - LOG_LEVEL=warn
+      - QUEUE_TYPE=memory
+    command: npm run test:ci
+    networks:
+      - pptist-network
+
+volumes:
+  test-results:
+    name: pptist-test-results
+  coverage-data:
+    name: pptist-coverage
+
+networks:
+  pptist-network:
+    name: pptist-network-test
+    driver: bridge
+

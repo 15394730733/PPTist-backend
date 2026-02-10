@@ -1,0 +1,80 @@
+# Docker Compose for PPTX Conversion Service
+# Development and testing setup
+
+version: '3.8'
+
+services:
+  # PPTX Conversion Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pptx-conversion-service
+    ports:
+      - "3000:3000"   # API port
+      - "9090:9090"   # Metrics port
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - QUEUE_TYPE=memory
+      - QUEUE_CONCURRENCY=3
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=pretty
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9090
+    volumes:
+      # Mount source for hot-reload in development
+      - ./src:/app/src:ro
+      - ./config:/app/config:ro
+      # Persist storage
+      - storage-data:/app/storage
+      - temp-data:/app/temp
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - pptx-network
+
+  # Redis (optional, for production queue)
+  redis:
+    image: redis:7-alpine
+    container_name: pptx-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - pptx-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prometheus (optional, for metrics)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pptx-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+    networks:
+      - pptx-network
+
+volumes:
+  storage-data:
+  temp-data:
+  redis-data:
+  prometheus-data:
+
+networks:
+  pptx-network:
+    driver: bridge

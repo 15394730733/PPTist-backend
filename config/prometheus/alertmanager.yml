@@ -1,0 +1,157 @@
+# Alertmanager Configuration
+
+# Global configuration
+global:
+  resolve_timeout: 5m
+  # SMTP configuration for email alerts
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@example.com'
+  smtp_auth_username: 'alerts@example.com'
+  smtp_auth_password: 'your-password'
+  smtp_require_tls: true
+
+# Templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default-receiver'
+
+  routes:
+    # Critical alerts go to both Slack and email immediately
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 0s
+      repeat_interval: 5m
+
+    # Warning alerts go to Slack
+    - match:
+        severity: warning
+      receiver: 'warning-receiver'
+      repeat_interval: 30m
+
+    # Info alerts go to Slack only
+    - match:
+        severity: info
+      receiver: 'info-receiver'
+      repeat_interval: 1h
+
+# Inhibition rules
+inhibit_rules:
+  # Inhibit warning if critical is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']
+
+# Receivers
+receivers:
+  - name: 'default-receiver'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#alerts'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+
+  - name: 'critical-receiver'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#critical-alerts'
+        color: 'danger'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: |
+          *Alert:* {{ .GroupLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
+          *Time:* {{ .StartsAt.Format("2006-01-02 15:04:05") }}
+        send_resolved: true
+        actions:
+          - type: button
+            text: 'View Dashboard'
+            url: 'http://your-grafana-url/d/pptist'
+
+    email_configs:
+      - to: 'oncall@example.com'
+        headers:
+          Subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>{{ .GroupLabels.alertname }}</h2>
+          <p><strong>Severity:</strong> {{ .CommonLabels.severity }}</p>
+          <p><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+          <p><strong>Description:</strong></p>
+          <ul>
+          {{ range .Alerts }}
+            <li>{{ .Annotations.description }}</li>
+          {{ end }}
+          </ul>
+          <p><strong>Time:</strong> {{ .StartsAt.Format("2006-01-02 15:04:05") }}</p>
+          <p><a href="http://your-prometheus-url">View in Prometheus</a></p>
+
+    webhook_configs:
+      - url: 'http://your-webhook-endpoint/alert'
+        send_resolved: true
+
+  - name: 'warning-receiver'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#alerts'
+        color: 'warning'
+        title: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+        text: |
+          *Alert:* {{ .GroupLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
+        send_resolved: true
+
+  - name: 'info-receiver'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#info'
+        color: 'good'
+        title: 'ℹ️ INFO: {{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.summary }}'
+        send_resolved: true
+
+# Time intervals
+time_intervals:
+  - name: 'business-hours'
+    time_intervals:
+      - times:
+          - start_time: '09:00'
+            end_time: '17:00'
+        weekdays: ['monday:friday']
+
+  - name: 'maintenance-window'
+    time_intervals:
+      - times:
+          - start_time: '02:00'
+            end_time: '04:00'
+        weekdays: ['sunday']
+
+# Mute configurations
+mute_time_intervals:
+  # Mute info alerts during business hours
+  - match:
+      severity: info
+    active_time_intervals:
+      - business-hours
+
+# Silence configuration (can be managed via API)
+# silences:
+#   - matchers:
+#       - name: alertname
+#         value: LowCacheHitRate
+#     startsAt: '2025-01-29T00:00:00Z'
+#     endsAt: '2025-01-30T00:00:00Z'
+#     createdBy: 'user@example.com'
+#     comment: 'Planned maintenance'

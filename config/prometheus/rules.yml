@@ -1,0 +1,213 @@
+groups:
+  - name: pptist_alerts
+    interval: 30s
+    rules:
+      # High error rate alert
+      - alert: HighErrorRate
+        expr: |
+          rate(http_requests_total{status_code=~"5.."}[5m])
+          / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+
+      # Critical error rate alert
+      - alert: CriticalErrorRate
+        expr: |
+          rate(http_requests_total{status_code=~"5.."}[5m])
+          / rate(http_requests_total[5m]) > 0.15
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Critical error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+
+      # High latency alert
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, http_request_duration_seconds) > 5
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency detected"
+          description: "P95 latency is {{ $value }}s for the last 10 minutes"
+
+      # Critical latency alert
+      - alert: CriticalLatency
+        expr: |
+          histogram_quantile(0.95, http_request_duration_seconds) > 15
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Critical API latency detected"
+          description: "P95 latency is {{ $value }}s for the last 5 minutes"
+
+      # Queue backlog alert
+      - alert: QueueBacklog
+        expr: queue_size{state="queued"} > 100
+        for: 15m
+        labels:
+          severity: warning
+          component: queue
+        annotations:
+          summary: "Queue backlog detected"
+          description: "{{ $value }} tasks are queued for more than 15 minutes"
+
+      # Critical queue backlog
+      - alert: CriticalQueueBacklog
+        expr: queue_size{state="queued"} > 500
+        for: 5m
+        labels:
+          severity: critical
+          component: queue
+        annotations:
+          summary: "Critical queue backlog"
+          description: "{{ $value }} tasks are queued"
+
+      # Conversion failure rate
+      - alert: HighConversionFailureRate
+        expr: |
+          rate(conversions_total{status="error"}[10m])
+          / rate(conversions_total[10m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          component: conversion
+        annotations:
+          summary: "High conversion failure rate"
+          description: "Conversion failure rate is {{ $value | humanizePercentage }}"
+
+      # Low conversion success rate
+      - alert: LowConversionSuccessRate
+        expr: |
+          rate(conversions_total{status="success"}[10m])
+          / rate(conversions_total[10m]) < 0.8
+        for: 15m
+        labels:
+          severity: critical
+          component: conversion
+        annotations:
+          summary: "Low conversion success rate"
+          description: "Only {{ $value | humanizePercentage }} of conversions are succeeding"
+
+      # Memory usage alert
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes / node_memory_MemTotal_bytes > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }} of total"
+
+      # Critical memory usage
+      - alert: CriticalMemoryUsage
+        expr: |
+          process_resident_memory_bytes / node_memory_MemTotal_bytes > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Critical memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }} of total"
+
+      # CPU usage alert
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 15m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"
+
+      # Disk space alert
+      - alert: LowDiskSpace
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"}
+          / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 15m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "Low disk space"
+          description: "Only {{ $value | humanizePercentage }} disk space available"
+
+      # Cache hit rate low
+      - alert: LowCacheHitRate
+        expr: |
+          rate(cache_hits_total[10m])
+          / (rate(cache_hits_total[10m]) + rate(cache_misses_total[10m])) < 0.5
+        for: 20m
+        labels:
+          severity: info
+          component: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}"
+
+      # Service down alert
+      - alert: ServiceDown
+        expr: up{job="pptist"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: service
+        annotations:
+          summary: "PPTist service is down"
+          description: "PPTist service has been down for 2 minutes"
+
+      # High request rate (possible DDoS)
+      - alert: HighRequestRate
+        expr: |
+          rate(http_requests_total[1m]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Unusually high request rate"
+          description: "Request rate is {{ $value }} req/s"
+
+  - name: pptist_business_metrics
+    interval: 1m
+    rules:
+      # Average conversion time
+      - alert: SlowConversion
+        expr: |
+          histogram_quantile(0.95, conversion_duration_seconds) > 30
+        for: 15m
+        labels:
+          severity: warning
+          component: conversion
+        annotations:
+          summary: "Slow conversion time"
+          description: "P95 conversion time is {{ $value }}s"
+
+      # Conversion throughput low
+      - alert: LowConversionThroughput
+        expr: |
+          rate(conversions_total{status="success"}[10m]) < 0.5
+        for: 20m
+        labels:
+          severity: warning
+          component: conversion
+        annotations:
+          summary: "Low conversion throughput"
+          description: "Only {{ $value }} conversions/second"
