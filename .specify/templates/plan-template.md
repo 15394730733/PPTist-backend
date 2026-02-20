@@ -3,7 +3,7 @@
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
 ## Summary
 
@@ -31,15 +31,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Based on `.specify/memory/constitution.md`, verify:
-
-- [ ] **XML-First**: Robust XML to JSON conversion with PPT-specific structure support
-- [ ] **Type Safety**: TypeScript + runtime validation (Zod/Joi) at all boundaries
-- [ ] **Performance**: Streaming for files >10MB, p95 < 2s response time
-- [ ] **Observability**: Structured logging with full context (size, duration, errors)
-- [ ] **Test Coverage**: Unit + integration tests with real PPT file fixtures
-
-*Violations MUST be justified in Complexity Tracking section below.*
+[Gates determined based on constitution file]
 
 ## Project Structure
 
