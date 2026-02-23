@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Test fixtures (large files)
+tests/fixtures/*.pptx
+!tests/fixtures/simple.pptx
+
+# MCP temp files
+.playwright-mcp/
+
+# Test outputs and screenshots
+*.png
+!docs/images/*.png
+test-*.json
+*.test.json
+
+# Spec workflow memory (local cache)
+.specify/memory/

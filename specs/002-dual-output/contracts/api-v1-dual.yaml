@@ -1,0 +1,222 @@
+openapi: 3.0.3
+info:
+  title: PPTist Conversion API - Dual Output Extension
+  description: |
+    Enhanced conversion endpoint supporting dual output formats.
+
+    ## Output Modes
+
+    ### format=both (Dual Output)
+    Returns both JSON and encrypted formats in a single response:
+    ```json
+    {
+      "json": { ... presentation data ... },
+      "pptist": "U2FsdGVkX1..."
+    }
+    ```
+
+    ### format=json (JSON Only)
+    Returns plain JSON presentation data as response body.
+
+    ### format=pptist (PPTist Only - Default)
+    Returns encrypted file download (backward compatible).
+  version: 1.1.0
+
+servers:
+  - url: /api/v1
+    description: API v1 endpoint
+
+paths:
+  /convert:
+    post:
+      summary: Convert PPTX with optional dual output
+      description: |
+        Enhanced conversion endpoint supporting multiple output formats.
+        Default behavior (format=pptist) maintains backward compatibility.
+      operationId: convertPptx
+      tags:
+        - Conversion
+      parameters:
+        - name: format
+          in: query
+          required: false
+          description: Output format selection
+          schema:
+            type: string
+            enum: [both, json, pptist]
+            default: pptist
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PPTX file to convert (max 50MB)
+      responses:
+        '200':
+          description: Conversion successful
+          content:
+            # Dual output response
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/DualOutputResponse'
+                  - $ref: '#/components/schemas/SingleJsonResponse'
+            # PPTist only response
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                examples:
+                  dual:
+                    value: inline
+                    description: Dual output returned inline
+                  json:
+                    value: attachment; filename="pptist-Conversion.json"
+                    description: JSON file download
+                  pptist:
+                    value: attachment; filename="pptist-Conversion.pptist"
+                    description: PPTist file download
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_format:
+                  summary: Invalid format parameter
+                  value:
+                    success: false
+                    error:
+                      code: ERR_INVALID_FORMAT
+                      message: Invalid format parameter. Must be: both, json, or pptist
+                      suggestion: Use a valid format value
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Conversion failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    DualOutputResponse:
+      type: object
+      required:
+        - json
+        - pptist
+      properties:
+        json:
+          $ref: '#/components/schemas/PPTistPresentation'
+        pptist:
+          type: string
+          description: AES encrypted presentation (CryptoJS format)
+
+    SingleJsonResponse:
+      $ref: '#/components/schemas/PPTistPresentation'
+
+    PPTistPresentation:
+      type: object
+      required:
+        - slides
+        - media
+        - metadata
+      properties:
+        slides:
+          type: array
+          items:
+            $ref: '#/components/schemas/Slide'
+        media:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MediaData'
+        metadata:
+          type: object
+          required:
+            - sourceFormat
+            - convertedAt
+            - version
+          properties:
+            sourceFormat:
+              type: string
+              enum: [pptx]
+            convertedAt:
+              type: string
+              format: date-time
+            version:
+              type: string
+        warnings:
+          type: array
+          items:
+            type: string
+
+    Slide:
+      type: object
+      properties:
+        id:
+          type: string
+        elements:
+          type: array
+          items:
+            type: object
+        background:
+          type: object
+
+    MediaData:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [image, video, audio]
+        data:
+          type: string
+          description: Base64 encoded media
+        mimeType:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - ERR_INVALID_FORMAT
+                - ERR_FILE_TOO_LARGE
+                - ERR_CONVERSION_FAILED
+            message:
+              type: string
+            suggestion:
+              type: string
+
+tags:
+  - name: Conversion
+    description: File conversion operations

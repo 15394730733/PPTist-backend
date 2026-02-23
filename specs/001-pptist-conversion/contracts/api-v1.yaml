@@ -1,0 +1,218 @@
+openapi: 3.0.3
+info:
+  title: PPTist Conversion API
+  description: |
+    Convert PPTX files to encrypted PPTist format.
+
+    ## Features
+    - Parse PPTX (Office Open XML) files
+    - Convert to PPTist-compatible JSON structure
+    - AES encrypt output using CryptoJS
+    - Direct download of encrypted .pptist files
+
+    ## Error Handling
+    All errors return a JSON response with structured error codes and user-friendly messages.
+
+    ## Warnings
+    Non-fatal issues (skipped elements, font fallbacks) are included in the response warnings array.
+  version: 1.0.0
+  contact:
+    name: PPTist Backend Team
+
+servers:
+  - url: /api/v1
+    description: API v1 endpoint
+
+paths:
+  /convert:
+    post:
+      summary: Convert PPTX to PPTist format
+      description: |
+        Upload a PPTX file and receive an encrypted .pptist file.
+
+        The conversion process:
+        1. Validates file format and size
+        2. Parses PPTX structure
+        3. Converts elements to PPTist format
+        4. Encrypts output with AES (key: 'pptist')
+        5. Returns encrypted file for download
+      operationId: convertPptx
+      tags:
+        - Conversion
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PPTX file to convert (max 50MB)
+            encoding:
+              file:
+                contentType: application/vnd.openxmlformats-officedocument.presentationml.presentation
+      responses:
+        '200':
+          description: Conversion successful - encrypted .pptist file returned
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="pptist-Conversion.pptist"
+              description: Indicates the file should be downloaded
+            Content-Type:
+              schema:
+                type: string
+                example: application/octet-stream
+        '400':
+          description: Bad request - invalid file format, empty file, or protected file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_format:
+                  summary: Invalid file format
+                  value:
+                    success: false
+                    error:
+                      code: ERR_INVALID_FORMAT
+                      message: File is not a valid PPTX
+                      suggestion: Please upload a PowerPoint (.pptx) file
+                protected_file:
+                  summary: Password protected file
+                  value:
+                    success: false
+                    error:
+                      code: ERR_PROTECTED_FILE
+                      message: Password-protected files are not supported
+                      suggestion: Please remove password protection and try again
+                empty_file:
+                  summary: Empty file
+                  value:
+                    success: false
+                    error:
+                      code: ERR_EMPTY_FILE
+                      message: File is empty or contains no slides
+                      suggestion: Please upload a non-empty presentation
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: ERR_FILE_TOO_LARGE
+                  message: File exceeds 50MB limit
+                  suggestion: Please compress your presentation or reduce media content
+        '500':
+          description: Internal conversion error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: ERR_CONVERSION_FAILED
+                  message: An unexpected error occurred during conversion
+                  suggestion: Please try again or contact support if the problem persists
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the service health status
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  version:
+                    type: string
+                  uptime:
+                    type: number
+                    description: Uptime in seconds
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - ERR_INVALID_FORMAT
+                - ERR_FILE_TOO_LARGE
+                - ERR_PROTECTED_FILE
+                - ERR_CORRUPTED_FILE
+                - ERR_EMPTY_FILE
+                - ERR_CONVERSION_FAILED
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable error message
+            suggestion:
+              type: string
+              description: Suggested action for the user
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+          description: Non-fatal warnings that occurred during processing
+
+    Warning:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - WARN_SMARTART_SKIPPED
+            - WARN_MACRO_SKIPPED
+            - WARN_ACTIVEX_SKIPPED
+            - WARN_FONT_FALLBACK
+        message:
+          type: string
+        count:
+          type: integer
+          description: Number of elements affected
+
+tags:
+  - name: Conversion
+    description: File conversion operations
+  - name: System
+    description: System health and status

@@ -31,7 +31,17 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify compliance with `.specify/memory/constitution.md`:
+
+| Principle | Status | Notes |
+|-----------|--------|-------|
+| I. Extensibility First | ✅/⚠️ | Does design support extension without modification? |
+| II. Node.js Ecosystem | ✅/⚠️ | Using established npm packages? TypeScript enabled? |
+| III. Module Boundaries | ✅/⚠️ | Are modules independently testable with clear interfaces? |
+| IV. Configuration Driven | ✅/⚠️ | Behavior adjustable via config/env vars? |
+| V. Progressive Enhancement | ✅/⚠️ | Starting simple, only adding complexity when needed? |
+
+**Violations requiring justification**: [List any principle violations and rationale]
 
 ## Project Structure
 
