@@ -55,9 +55,9 @@ function isTableElement(element: PPTXElement): element is PPTXTableElement {
 /**
  * Convert PPTX table element to PPTist table element
  */
-function convertTable(element: PPTXTableElement, context: ConversionContext): PPTTableElement {
+function convertTable(element: PPTXTableElement, _context: ConversionContext): PPTTableElement {
   const { transform, rows } = element
-  const { toPixelX, toPixelY } = createEmuConverters(context.slideSize)
+  const { toPixelX, toPixelY } = createEmuConverters()
 
   // Convert all cells
   const pptistRows = rows.map((row) => row.map(convertCell))

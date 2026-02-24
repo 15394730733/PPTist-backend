@@ -1,7 +1,12 @@
-import type { Slide, PPTistPresentation, MediaMap } from '../types/pptist.js'
+import type { Slide, PPTistPresentation } from '../types/pptist.js'
 import type { ConversionContext } from '../../../types/index.js'
 
 const VERSION = '1.0.0'
+
+/**
+ * EMU 到像素的标准转换比例（基于 96 DPI）
+ */
+const EMU_TO_PIXEL = 1 / 9525
 
 /**
  * Serialize slides to PPTist presentation format
@@ -11,16 +16,6 @@ export function serializePresentation(
   context: ConversionContext,
   warnings: string[] = []
 ): PPTistPresentation {
-  // Build media map from context
-  const media: MediaMap = {}
-  for (const [id, data] of context.mediaMap) {
-    media[id] = {
-      type: data.type as 'image' | 'video' | 'audio',
-      data: data.data,
-      mimeType: data.mimeType,
-    }
-  }
-
   // Extract warning strings
   const warningStrings =
     warnings.length > 0
@@ -29,7 +24,10 @@ export function serializePresentation(
 
   const presentation: PPTistPresentation = {
     slides,
-    media,
+    size: {
+      width: Math.round(context.slideSize.width * EMU_TO_PIXEL),
+      height: Math.round(context.slideSize.height * EMU_TO_PIXEL),
+    },
     metadata: {
       sourceFormat: 'pptx',
       convertedAt: new Date().toISOString(),
@@ -54,8 +52,8 @@ export function toJson(presentation: PPTistPresentation): string {
 export function getStats(presentation: PPTistPresentation): {
   slideCount: number
   elementCount: number
-  mediaCount: number
   warningCount: number
+  size: { width: number; height: number }
 } {
   let elementCount = 0
   for (const slide of presentation.slides) {
@@ -65,8 +63,8 @@ export function getStats(presentation: PPTistPresentation): {
   return {
     slideCount: presentation.slides.length,
     elementCount,
-    mediaCount: Object.keys(presentation.media).length,
     warningCount: presentation.warnings.length,
+    size: presentation.size,
   }
 }
 

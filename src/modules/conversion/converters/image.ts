@@ -16,7 +16,7 @@ function isImageElement(element: PPTXElement): element is PPTXImageElement {
  */
 function convertImage(element: PPTXImageElement, context: ConversionContext): PPTImageElement {
   const { transform, rId } = element
-  const { toPixelX, toPixelY } = createEmuConverters(context.slideSize)
+  const { toPixelX, toPixelY } = createEmuConverters()
 
   // 使用 slideIndex_rId 组合键查找媒体（避免不同幻灯片 rId 冲突）
   const mediaKey = `${context.currentSlideIndex}_${rId}`

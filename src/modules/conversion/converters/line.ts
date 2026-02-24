@@ -16,9 +16,9 @@ function isLineElement(element: PPTXElement): element is PPTXLineElement {
  * Convert PPTX line element to PPTist shape element
  * Lines are represented as shapes with a path and transparent fill
  */
-function convertLineToShape(element: PPTXLineElement, context: ConversionContext): PPTShapeElement {
+function convertLineToShape(element: PPTXLineElement, _context: ConversionContext): PPTShapeElement {
   const { transform, startX, startY, endX, endY, color, style, width } = element
-  const { toPixelX, toPixelY } = createEmuConverters(context.slideSize)
+  const { toPixelX, toPixelY } = createEmuConverters()
 
   // 计算元素边界（像素坐标）
   const left = toPixelX(transform.x)

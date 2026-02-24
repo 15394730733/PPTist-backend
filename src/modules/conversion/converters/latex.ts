@@ -17,9 +17,9 @@ function isLatexElement(element: PPTXElement): element is PPTXLatexElement {
  * Note: PPTX stores LaTeX as embedded OLE objects or MathML
  * This converter handles basic conversion
  */
-function convertLatex(element: PPTXLatexElement, context: ConversionContext): PPTLatexElement | null {
+function convertLatex(element: PPTXLatexElement, _context: ConversionContext): PPTLatexElement | null {
   const { transform, latex, path } = element
-  const { toPixelX, toPixelY } = createEmuConverters(context.slideSize)
+  const { toPixelX, toPixelY } = createEmuConverters()
 
   // If no latex content or path, skip this element
   if (!latex && !path) {

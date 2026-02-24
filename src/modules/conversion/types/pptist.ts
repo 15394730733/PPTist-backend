@@ -347,22 +347,14 @@ export interface SlideTheme {
   shadow: PPTElementShadow
 }
 
-// Media map
-export interface MediaData {
-  type: 'image' | 'video' | 'audio'
-  data: string // base64
-  mimeType: string
-}
-
-export interface MediaMap {
-  [mediaId: string]: MediaData
-}
-
 // Output presentation
 export interface PPTistPresentation {
   slides: Slide[]
   theme?: SlideTheme
-  media: MediaMap
+  size: {
+    width: number   // 实际像素宽度
+    height: number  // 实际像素高度
+  }
   metadata: {
     sourceFormat: 'pptx'
     convertedAt: string

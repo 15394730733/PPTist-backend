@@ -45,9 +45,9 @@ function isChartElement(element: PPTXElement): element is PPTXChartElement {
  * Convert PPTX chart element to PPTist chart element
  * Supports real chart data extraction from the _chartData property
  */
-function convertChart(element: PPTXChartElement, context: ConversionContext): PPTChartElement {
+function convertChart(element: PPTXChartElement, _context: ConversionContext): PPTChartElement {
   const { transform, chartType } = element
-  const { toPixelX, toPixelY } = createEmuConverters(context.slideSize)
+  const { toPixelX, toPixelY } = createEmuConverters()
 
   // Check if we have real chart data from the parser
   const chartElement = element as PPTXChartElement & {

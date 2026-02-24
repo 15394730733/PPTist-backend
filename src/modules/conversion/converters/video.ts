@@ -16,7 +16,7 @@ function isVideoElement(element: PPTXElement): element is PPTXVideoElement {
  */
 function convertVideo(element: PPTXVideoElement, context: ConversionContext): PPTVideoElement {
   const { transform, rId, contentType, posterRId } = element
-  const { toPixelX, toPixelY } = createEmuConverters(context.slideSize)
+  const { toPixelX, toPixelY } = createEmuConverters()
 
   // Get video data from context
   const media = context.mediaMap.get(rId)

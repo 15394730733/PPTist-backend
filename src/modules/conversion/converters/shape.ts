@@ -49,9 +49,9 @@ function isShapeElement(element: PPTXElement): element is PPTXShapeElement {
 /**
  * Convert PPTX shape element to PPTist shape element
  */
-function convertShape(element: PPTXShapeElement, context: ConversionContext): PPTShapeElement {
+function convertShape(element: PPTXShapeElement, _context: ConversionContext): PPTShapeElement {
   const { transform, shapeType, adj, fill, fillOpacity, outline, paragraphs } = element
-  const { toPixelX, toPixelY } = createEmuConverters(context.slideSize)
+  const { toPixelX, toPixelY } = createEmuConverters()
 
   // 计算像素尺寸
   const pixelWidth = toPixelX(transform.width)

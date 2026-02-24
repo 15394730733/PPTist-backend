@@ -16,7 +16,7 @@ function isAudioElement(element: PPTXElement): element is PPTXAudioElement {
  */
 function convertAudio(element: PPTXAudioElement, context: ConversionContext): PPTAudioElement {
   const { transform, rId, contentType } = element
-  const { toPixelX, toPixelY } = createEmuConverters(context.slideSize)
+  const { toPixelX, toPixelY } = createEmuConverters()
 
   // Get audio data from context
   const media = context.mediaMap.get(rId)

@@ -49,9 +49,9 @@ function isTextElement(element: PPTXElement): element is PPTXTextElement {
 /**
  * Convert PPTX text element to PPTist text element
  */
-function convertText(element: PPTXTextElement, context: ConversionContext): PPTTextElement {
+function convertText(element: PPTXTextElement, _context: ConversionContext): PPTTextElement {
   const { transform, paragraphs } = element
-  const { toPixelX, toPixelY } = createEmuConverters(context.slideSize)
+  const { toPixelX, toPixelY } = createEmuConverters()
 
   // Get default formatting from first paragraph's first run
   const firstRun = paragraphs[0]?.runs[0]
